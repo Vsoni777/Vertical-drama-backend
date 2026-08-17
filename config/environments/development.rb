@@ -32,11 +32,18 @@ Rails.application.configure do
   # Don't care if the mailer can't send.
   config.action_mailer.raise_delivery_errors = false
 
+  # In development, print emails to the Rails log instead of sending them via SMTP.
+  # The reset link will appear in the server console — copy it to test.
+  config.action_mailer.delivery_method = :letter_opener_web
+  config.action_mailer.perform_deliveries = true
+
   # Make template changes take effect immediately.
   config.action_mailer.perform_caching = false
 
-  # Set localhost to be used by links generated in mailer templates.
+  # The host used to build links inside mailer templates.
+  # Password reset link will redirect users to the React frontend.
   config.action_mailer.default_url_options = { host: "localhost", port: 3000 }
+  config.hosts << "refold-capital-untaxed.ngrok-free.dev"
 
   # Print deprecation notices to the Rails logger.
   config.active_support.deprecation = :log

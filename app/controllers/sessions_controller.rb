@@ -12,7 +12,10 @@ class SessionsController < Devise::SessionsController
     }, status: :ok
   end
 
-  def respond_to_on_destroy
-    head :no_content
+  def respond_to_on_destroy(_resource = nil)
+    render json: {
+      status: 200,
+      message: "Logged out successfully"
+    }
   end
 end

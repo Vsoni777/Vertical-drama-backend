@@ -23,6 +23,9 @@ gem "devise"
 gem "devise-jwt"
 gem "sidekiq"
 gem "dotenv"
+gem "stripe"
+gem 'mux_ruby'
+gem 'kaminari'
 
 # Reduces boot times through caching; required in config/boot.rb
 gem "bootsnap", require: false
@@ -51,4 +54,15 @@ group :development, :test do
 
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "rubocop-rails-omakase", require: false
+
+  gem 'rspec-rails'
+  gem 'factory_bot_rails'
+  gem 'faker'
 end
+
+group :test do
+  gem 'shoulda-matchers'
+  gem 'webmock'
+end
+
+gem "letter_opener_web", "~> 3.0", group: :development

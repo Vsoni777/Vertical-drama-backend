@@ -1,24 +1,17 @@
-# README
+# Vertical Drama API
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+Rails API for short-form episodic video. Videos are uploaded and streamed by [Mux Video]; Rails stores only Mux identifiers and
+enforces the application's access rules.
 
-Things you may want to cover:
+## Setup
 
-* Ruby version
+1. Copy `.env.example` to `.env` and add the Mux credentials. Do not commit
+   `.env`.
+2. Create the databases and run migrations:
 
-* System dependencies
+   ```sh
+   bin/rails db:prepare
+   ```
 
-* Configuration
-
-* Database creation
-
-* Database initialization
-
-* How to run the test suite
-
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
+3. Run the API with `bin/rails server`.
+# Vertical-drama-backend
