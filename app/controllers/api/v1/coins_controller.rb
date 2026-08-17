@@ -52,8 +52,8 @@ class Api::V1::CoinsController < Api::BaseController
             user_id: current_user.id,
             pack:    pack
           },
-          success_url: "#{ENV.fetch('FRONTEND_URL', 'https://vertical-drama-five.vercel.app')}/coins/success?session_id={CHECKOUT_SESSION_ID}",
-          cancel_url:  "#{ENV.fetch('FRONTEND_URL', 'https://vertical-drama-five.vercel.app')}/membership"
+          success_url: "#{ENV.fetch('FRONT_URL', 'https://vertical-drama-five.vercel.app')}/coins?success=true&session_id={CHECKOUT_SESSION_ID}",
+          cancel_url:  "#{ENV.fetch('FRONT_URL', 'https://vertical-drama-five.vercel.app')}/coins?canceled=true"
         )
 
         render json: {

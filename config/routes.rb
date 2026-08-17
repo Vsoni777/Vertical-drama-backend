@@ -4,7 +4,6 @@ Rails.application.routes.draw do
   get "up" => "rails/health#show", as: :rails_health_check
   mount Sidekiq::Web => "/sidekiq"
 
-  # Dev email preview at http://localhost:3000/letter_opener
   mount LetterOpenerWeb::Engine, at: "/letter_opener" if Rails.env.development?
 
   devise_scope :user do
@@ -40,9 +39,9 @@ Rails.application.routes.draw do
         get  "/reward_status", to: "coins#reward_status",  as: :coin_reward_status
       end
 
-      resource :subscription, only: %i[show create destroy] do
+      resource :subscriptions, only: %i[show create destroy] do
         collection do
-          post :checkout   # Creates a Stripe Checkout Session for subscription
+          post :checkout  
         end
       end
 
