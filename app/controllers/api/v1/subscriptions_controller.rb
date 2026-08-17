@@ -59,8 +59,8 @@ class Api::V1::SubscriptionsController < Api::BaseController
           quantity: 1,
         }],
         mode: 'subscription',
-        success_url: "#{ENV['FRONT_URL']}/dashboard?success=true&session_id={CHECKOUT_SESSION_ID}",
-        cancel_url: "#{ENV['FRONT_URL']}/membership?canceled=true",
+        success_url: "#{ENV.fetch('FRONT_URL', 'https://vertical-drama-five.vercel.app')}/dashboard?success=true&session_id={CHECKOUT_SESSION_ID}",
+        cancel_url: "#{ENV.fetch('FRONT_URL', 'https://vertical-drama-five.vercel.app')}/dashboard?canceled=true",
         subscription_data: {
           metadata: {
             plan: plan
