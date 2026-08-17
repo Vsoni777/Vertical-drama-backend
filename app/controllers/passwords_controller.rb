@@ -16,8 +16,6 @@ class PasswordsController < Devise::PasswordsController
     end
   end
 
-  # GET /users/password/edit?reset_password_token=abcdef
-  # Intercept the click from the email and redirect to the React frontend
   def edit
     frontend_url = ENV.fetch("FRONTEND_URL", "http://localhost:5173")
     redirect_to "#{frontend_url}/reset-password?reset_password_token=#{params[:reset_password_token]}", allow_other_host: true

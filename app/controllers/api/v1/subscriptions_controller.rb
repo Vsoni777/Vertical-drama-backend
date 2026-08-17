@@ -59,8 +59,8 @@ class Api::V1::SubscriptionsController < Api::BaseController
           quantity: 1,
         }],
         mode: 'subscription',
-        success_url: "#{ENV.fetch('FRONTEND_URL', 'http://localhost:5173')}/dashboard?success=true&session_id={CHECKOUT_SESSION_ID}",
-        cancel_url: "#{ENV.fetch('FRONTEND_URL', 'http://localhost:5173')}/membership?canceled=true",
+        success_url: "#{ENV['FRONT_URL']}/dashboard?success=true&session_id={CHECKOUT_SESSION_ID}",
+        cancel_url: "#{ENV['FRONT_URL']}/membership?canceled=true",
         subscription_data: {
           metadata: {
             plan: plan
@@ -70,7 +70,6 @@ class Api::V1::SubscriptionsController < Api::BaseController
 
       render json: { data: { checkout_url: session.url } }
     else
-      # In development without Stripe, simulate a successful subscription
       current_user.subscriptions.active.update_all(status: :cancelled)
       subscription = current_user.subscriptions.create!(
         plan:       plan,
