@@ -1,6 +1,4 @@
 class Webhooks::StripeController < ActionController::Base
-  # Webhooks are POSTed from Stripe servers (or from local dev tools).
-  # They don't include Rails CSRF tokens, so skip authenticity verification.
   skip_before_action :verify_authenticity_token
   protect_from_forgery with: :null_session
 

@@ -44,6 +44,6 @@ class MuxVideo
   end
 
   def self.default_cors_origin
-    ENV.fetch("FRONTEND_URL", "http://localhost:5173")
+    ENV.fetch("FRONTEND_URL", "https://vertical-drama-five.vercel.app")
   end
 end

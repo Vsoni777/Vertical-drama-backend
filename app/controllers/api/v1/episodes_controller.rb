@@ -138,16 +138,7 @@ class Api::V1::EpisodesController < Api::BaseController
 
   def normalize_published_at
     return unless params[:episode]
-
-    if params[:episode].key?(:release_at)
-      params[:episode][:published_at] = params[:episode].delete(:release_at)
-    end
-
-    if params[:episode][:published_at].present?
-      # let ActiveRecord parse the datetime string
-    else
-      params[:episode][:published_at] = nil
-    end
+    params[:episode][:published_at] = params[:episode].delete(:release_at) if params[:episode].key?(:release_at)
   end
 
   def episode_json(episode, unlocked_ids = Set.new, progress_map = {})

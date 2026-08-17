@@ -14,8 +14,6 @@ class Episode < ApplicationRecord
   validates :title, :episode_number, presence: true
   validates :episode_number, uniqueness: { scope: :series_id }
   validates :coin_cost, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
-
-  # Ordered by episode number; exclude future-scheduled episodes for viewers
   scope :ordered,    -> { order(:episode_number) }
   scope :published,  -> { where("scheduled_at IS NULL OR scheduled_at <= ?", Time.current) }
 
@@ -27,7 +25,6 @@ class Episode < ApplicationRecord
     !locked?
   end
 
-  # An episode is visible to viewers only if it's published (not scheduled for future)
   def published?
     scheduled_at.nil? || scheduled_at <= Time.current
   end

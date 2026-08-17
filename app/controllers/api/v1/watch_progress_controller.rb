@@ -1,5 +1,4 @@
 class Api::V1::WatchProgressController < Api::BaseController
-  # GET /api/v1/watch_progress — continue-watching list
   def index
     progresses = current_user.watch_progresses
                              .includes(:episode, :series)
@@ -22,7 +21,6 @@ class Api::V1::WatchProgressController < Api::BaseController
     }
   end
 
-  # PATCH /api/v1/watch_progress
   def update
     episode = Episode.find(params[:episode_id])
     series  = episode.series
