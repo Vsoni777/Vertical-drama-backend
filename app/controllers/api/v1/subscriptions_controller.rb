@@ -13,7 +13,7 @@ class Api::V1::SubscriptionsController < Api::BaseController
     plan = params[:plan].to_s
     return render(json: { error: "Invalid plan" }, status: :unprocessable_entity) unless PLANS.key?(plan)
 
-    current_user.subscriptions.active.update_all(status: :cancelled)
+    return render(json: { error: "Already subscribed" }, status: :unprocessable_entity) if current_user.subscriptions.active.exists?
 
     if ENV['STRIPE_SECRET_KEY'].present?
       svc = StripeSubscriptionService.new(current_user)
@@ -28,13 +28,6 @@ class Api::V1::SubscriptionsController < Api::BaseController
         started_at:            started_at || Time.current,
         ends_at:               ends_at || (Time.current + PLANS[plan][:duration]),
         stripe_subscription_id: stripe_sub.id
-      )
-    else
-      subscription = current_user.subscriptions.create!(
-        plan:       plan,
-        status:     :active,
-        started_at: Time.current,
-        ends_at:    Time.current + PLANS[plan][:duration]
       )
     end
 
@@ -59,26 +52,53 @@ class Api::V1::SubscriptionsController < Api::BaseController
           quantity: 1,
         }],
         mode: 'subscription',
-        success_url: "#{ENV.fetch('FRONT_URL', 'https://vertical-drama-five.vercel.app')}/dashboard?success=true&session_id={CHECKOUT_SESSION_ID}",
+        success_url: "#{ENV.fetch('FRONT_URL', 'https://vertical-drama-five.vercel.app')}/membership?success=true&session_id={CHECKOUT_SESSION_ID}",
         cancel_url: "#{ENV.fetch('FRONT_URL', 'https://vertical-drama-five.vercel.app')}/membership?canceled=true",
         subscription_data: {
           metadata: {
+            user_id: current_user.id,
             plan: plan
           }
         }
       )
 
-      render json: { data: { checkout_url: session.url } }
-    else
-      current_user.subscriptions.active.update_all(status: :cancelled)
-      subscription = current_user.subscriptions.create!(
-        plan:       plan,
-        status:     :active,
-        started_at: Time.current,
-        ends_at:    Time.current + PLANS[plan][:duration]
-      )
-      render json: { data: { mode: 'dev', subscription: subscription_json(subscription) } }
+      render json: { data: { checkout_url: session.url, session_id: session.id } }, status: :created
     end
+  end
+
+  def verify_subscription
+    session_id = params[:session_id].to_s
+    return render(json: { error: "Missing session_id" }, status: :bad_request) if session_id.blank?
+
+    begin
+      session = Stripe::Checkout::Session.retrieve(session_id)
+    rescue Stripe::StripeError => e
+      return render json: { error: e.message }, status: :bad_gateway
+    end
+
+    unless session.metadata["user_id"].to_i == current_user.id && session.subscription.present?
+      return render json: { error: "Subscription not completed" }, status: :payment_required
+    end
+
+    plan = session.metadata["plan"]
+    return render(json: { error: "Invalid plan" }, status: :unprocessable_entity) unless PLANS.key?(plan)
+
+    description = "Stripe Subscription Session #{session_id}"
+
+    unless current_user.subscriptions.active.exists?
+
+      subscription = current_user.subscriptions.create!(
+        plan:                  plan,
+        status:                :active,
+        started_at:            Time.current,
+        ends_at:               Time.current + PLANS[plan][:duration],
+        stripe_subscription_id: session.subscription
+      )
+    else
+      subscription = current_user.subscriptions.find_by(stripe_subscription_id: session.subscription)
+    end
+
+    render json: { data: subscription_json(subscription) }
   end
 
   def destroy

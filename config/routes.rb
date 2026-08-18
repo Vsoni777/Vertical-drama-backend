@@ -41,7 +41,8 @@ Rails.application.routes.draw do
 
       resource :subscriptions, only: %i[show create destroy] do
         collection do
-          post :checkout  
+          post :checkout
+          post :verify_subscription
         end
       end
 
