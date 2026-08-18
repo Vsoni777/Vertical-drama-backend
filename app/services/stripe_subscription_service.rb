@@ -1,9 +1,4 @@
 class StripeSubscriptionService
-  PRICE_MAP = {
-    "monthly" => ENV["STRIPE_PRICE_MONTHLY"],
-    "yearly"  => ENV["STRIPE_PRICE_YEARLY"]
-  }.freeze
-
   def initialize(user)
     @user = user
   end
@@ -25,20 +20,11 @@ class StripeSubscriptionService
     customer
   end
 
-  def price_id_for(plan)
-    price_id = PRICE_MAP[plan]
-
-    unless price_id.present?
-      raise ArgumentError,
-            "Missing Stripe price ID for plan: #{plan}"
-    end
-
-    unless price_id.start_with?("price_")
-      raise ArgumentError,
-            "Invalid Stripe price ID for plan: #{plan}"
-    end
-
-    price_id
+  def resolve_price_id(plan, price_cents)
+    # Create or retrieve a price from Stripe based on the plan
+    # In production, you'd typically have pre-created prices in Stripe
+    # For now, we'll use price_data directly in checkout
+    return { price_data: build_price_data(plan, price_cents) }
   end
 
   def cancel_subscription(stripe_subscription_id)
@@ -54,6 +40,21 @@ class StripeSubscriptionService
 
   private
 
+  def build_price_data(plan, price_cents)
+    {
+      currency: ENV.fetch("STRIPE_CURRENCY", "usd"),
+      unit_amount: (price_cents * 100).to_i,
+      product_data: {
+        name: "Vertical Drama - #{plan.capitalize} Subscription",
+        description: "Access to premium episodes"
+      },
+      recurring: {
+        interval: plan == "monthly" ? "month" : "year",
+        interval_count: 1
+      }
+    }
+  end
+
   def retrieve_existing_customer
     Stripe::Customer.retrieve(
       @user.stripe_customer_id
@@ -66,21 +67,6 @@ class StripeSubscriptionService
 
     @user.update!(stripe_customer_id: nil)
 
-    create_customer
-  end
-
-  def create_customer
-    customer = Stripe::Customer.create(
-      email: @user.email,
-      metadata: {
-        user_id: @user.id.to_s
-      }
-    )
-
-    @user.update!(
-      stripe_customer_id: customer.id
-    )
-
-    customer
+    ensure_customer
   end
 end

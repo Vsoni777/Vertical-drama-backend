@@ -34,12 +34,12 @@ class Api::V1::SubscriptionsController < Api::BaseController
 
     service = StripeSubscriptionService.new(current_user)
     customer = service.ensure_customer
-    price_id = service.price_id_for(plan)
+    price_data = service.resolve_price_id(plan, PLANS[plan][:price])
 
     session = Stripe::Checkout::Session.create(
           customer: customer.id, mode: "subscription",
           payment_method_types: ["card"],
-          line_items: [ { price: price_id, quantity: 1 } ],
+          line_items: [ { price_data: price_data[:price_data], quantity: 1 } ],
           metadata: { user_id: current_user.id.to_s, plan: plan },
           subscription_data: {
             metadata: {
