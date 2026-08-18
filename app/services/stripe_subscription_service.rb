@@ -1,74 +1,86 @@
 class StripeSubscriptionService
   PRICE_MAP = {
-    "monthly" => ENV['STRIPE_PRICE_MONTHLY'],
-    "yearly"  => ENV['STRIPE_PRICE_YEARLY']
+    "monthly" => ENV["STRIPE_PRICE_MONTHLY"],
+    "yearly"  => ENV["STRIPE_PRICE_YEARLY"]
   }.freeze
 
   def initialize(user)
     @user = user
   end
 
-  def create_subscription(plan)
-    price_value = PRICE_MAP[plan]
-    raise ArgumentError, "Unknown plan or missing price id" unless price_value.present?
+  def ensure_customer
+    return retrieve_existing_customer if @user.stripe_customer_id.present?
 
-    resolved_price_id = resolve_price_id(plan, price_value)
+    customer = Stripe::Customer.create(
+      email: @user.email,
+      metadata: {
+        user_id: @user.id.to_s
+      }
+    )
 
-    customer = ensure_customer
+    @user.update!(
+      stripe_customer_id: customer.id
+    )
 
-    subscription = Stripe::Subscription.create({
-      customer: customer.id,
-      items: [{ price: resolved_price_id }],
-      expand: ['latest_invoice.payment_intent']
-    })
-
-    subscription
+    customer
   end
 
-  def resolve_price_id(plan, value)
-    return value if value.to_s.start_with?("price_")
+  def price_id_for(plan)
+    price_id = PRICE_MAP[plan]
 
-    unit_amount = value.to_i
-    raise ArgumentError, "Invalid numeric price for plan #{plan}" unless unit_amount > 0
-
-    interval = plan == "yearly" ? "year" : "month"
-
-    product_id = ENV['STRIPE_PRODUCT_ID']
-    if product_id.blank?
-      product = Stripe::Product.create(name: "VerticalDrama Subscriptions")
-      product_id = product.id
+    unless price_id.present?
+      raise ArgumentError,
+            "Missing Stripe price ID for plan: #{plan}"
     end
 
-    price = Stripe::Price.create({
-      unit_amount: unit_amount,
-      currency: (ENV['STRIPE_CURRENCY'] || 'usd'),
-      recurring: { interval: interval },
-      product: product_id
-    })
+    unless price_id.start_with?("price_")
+      raise ArgumentError,
+            "Invalid Stripe price ID for plan: #{plan}"
+    end
 
-    price.id
+    price_id
   end
 
   def cancel_subscription(stripe_subscription_id)
-    return unless stripe_subscription_id.present?
+    return if stripe_subscription_id.blank?
 
-    Stripe::Subscription.update(stripe_subscription_id, {cancel_at_period_end: true})
+    Stripe::Subscription.update(
+      stripe_subscription_id,
+      {
+        cancel_at_period_end: true
+      }
+    )
   end
 
   private
 
-  def ensure_customer
-    if @user.respond_to?(:stripe_customer_id) && @user.stripe_customer_id.present?
-      Stripe::Customer.retrieve(@user.stripe_customer_id)
-    else
-      customer = Stripe::Customer.create({
-        email: @user.email,
-        metadata: { user_id: @user.id }
-      })
-      if @user.respond_to?(:stripe_customer_id)
-        @user.update_column(:stripe_customer_id, customer.id)
-      end
-      customer
-    end
+  def retrieve_existing_customer
+    Stripe::Customer.retrieve(
+      @user.stripe_customer_id
+    )
+  rescue Stripe::InvalidRequestError => e
+    Rails.logger.warn(
+      "[Stripe] Customer #{@user.stripe_customer_id} " \
+      "could not be retrieved: #{e.message}"
+    )
+
+    @user.update!(stripe_customer_id: nil)
+
+    create_customer
+  end
+
+  def create_customer
+    customer = Stripe::Customer.create(
+      email: @user.email,
+      metadata: {
+        user_id: @user.id.to_s
+      }
+    )
+
+    @user.update!(
+      stripe_customer_id: customer.id
+    )
+
+    customer
   end
 end

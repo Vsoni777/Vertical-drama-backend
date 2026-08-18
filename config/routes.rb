@@ -31,20 +31,18 @@ Rails.application.routes.draw do
         end
       end
 
-      scope :coins do
-        get  "/",              to: "coins#balance",        as: :coin_balance
-        post "/purchase",      to: "coins#purchase",       as: :coin_purchase
-        post "/purchase/verify", to: "coins#verify_purchase", as: :coin_purchase_verify
-        post "/reward",        to: "coins#reward",         as: :coin_reward
-        get  "/reward_status", to: "coins#reward_status",  as: :coin_reward_status
-      end
+    scope :coins do
+      get  "/",              to: "coins#balance",       as: :coin_balance
+      post "/purchase",      to: "coins#purchase",      as: :coin_purchase
+      post "/reward",        to: "coins#reward",        as: :coin_reward
+      get  "/reward_status", to: "coins#reward_status", as: :coin_reward_status
+    end
 
-      resource :subscriptions, only: %i[show create destroy] do
-        collection do
-          post :checkout
-          post :verify_subscription
-        end
+    resource :subscriptions, only: [:show, :destroy] do
+      collection do
+        post :checkout
       end
+    end
 
       scope :watch_progress do
         get   "/", to: "watch_progress#index",  as: :watch_progress
