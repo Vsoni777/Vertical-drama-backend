@@ -76,10 +76,6 @@ class Api::V1::SubscriptionsController < Api::BaseController
       return render json: { error: e.message }, status: :bad_gateway
     end
 
-    unless session.metadata["user_id"].to_i == current_user.id && session.subscription.present?
-      return render json: { error: "Subscription not completed" }, status: :payment_required
-    end
-
     plan = session.metadata["plan"]
     return render(json: { error: "Invalid plan" }, status: :unprocessable_entity) unless PLANS.key?(plan)
 
